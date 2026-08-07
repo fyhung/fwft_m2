@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10211f">
+  <title>M2 Algebra and Calculus — Function Analyzer | 2026 Summer</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.110.0"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-3.6.0.min.js" charset="utf-8"></script>
+  <style>
+    :root {
+      --ink: #132825;
+      --muted: #6d7c79;
+      --paper: #f5f1e8;
+      --panel: #fffdf8;
+      --line: #d9ddd6;
+      --forest: #123c35;
+      --forest-2: #1c544b;
+      --orange: #ef7d3c;
+      --orange-dark: #c85f25;
+      --green: #2c9a70;
+      --red: #db554a;
+      --purple: #7758b5;
+      --gold: #dda53a;
+      --blue: #2e75d4;
+      --shadow: 0 18px 48px rgba(21, 45, 41, .12);
+      --radius: 14px;
+      --font-scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: calc(16px * var(--font-scale));
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, math-field:focus-visible {
+      outline: 3px solid rgba(239, 125, 60, .32);
+      outline-offset: 2px;
+    }
+    .app { height: 100dvh; display: grid; grid-template-rows: 64px minmax(0, 1fr); }
+
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      color: #fff;
+      background: var(--forest);
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border: 1px solid rgba(255,255,255,.4); border-radius: 10px;
+      font: 700 18px/1 Georgia, serif; color: #ffe0c3; background: rgba(255,255,255,.06);
+    }
+    .brand-copy { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+    .brand-copy strong { font-family: Georgia, "Times New Roman", serif; font-size: calc(20px * var(--font-scale)); letter-spacing: -.01em; }
+    .brand-copy span { color: #a8c1bb; font-size: calc(12px * var(--font-scale)); letter-spacing: .08em; text-transform: uppercase; }
+    .global-actions { display: flex; align-items: center; gap: 7px; }
+
+    .btn {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 7px 11px;
+      color: var(--ink);
+      background: #fff;
+      font-size: calc(13px * var(--font-scale));
+      font-weight: 650;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: #b9c2bc; }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { color: #fff; background: var(--orange); border-color: var(--orange); }
+    .btn-primary:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+    .btn-dark { color: #f5faf8; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+    .btn-dark:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
+    .btn-quiet { background: transparent; }
+    .icon-btn { width: 36px; padding: 0; display: inline-grid; place-items: center; }
+    .mobile-only { display: none; }
+
+    .workspace { min-height: 0; display: grid; grid-template-columns: 338px minmax(0, 1fr); }
+    .sidebar {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      background: #f0ece2;
+      border-right: 1px solid #cfd5ce;
+      z-index: 12;
+    }
+    .sidebar-head { display: flex; align-items: center; justify-content: space-between; padding: 17px 16px 12px; }
+    .eyebrow { margin: 0; color: var(--muted); font-size: calc(11px * var(--font-scale)); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .function-count { color: var(--muted); font-size: calc(12px * var(--font-scale)); }
+    .function-list { min-height: 0; overflow: auto; padding: 0 12px 16px; scrollbar-width: thin; }
+
+    .function-card {
+      margin-bottom: 11px;
+      padding: 13px;
+      background: var(--panel);
+      border: 1px solid #d8ddd5;
+      border-left: 4px solid var(--function-color, var(--blue));
+      border-radius: var(--radius);
+      box-shadow: 0 5px 16px rgba(28, 51, 46, .05);
+    }
+    .function-card.is-selected { border-color: #9bafa8; box-shadow: 0 0 0 2px rgba(18,60,53,.08), 0 8px 24px rgba(28,51,46,.08); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+    .function-name { display: flex; align-items: center; gap: 8px; font: 700 16px/1 Georgia, serif; }
+    .color-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--function-color); }
+    .card-actions { display: flex; gap: 3px; }
+    .mini-btn {
+      width: 28px; height: 28px; padding: 0; border: 0; border-radius: 7px;
+      color: #60716d; background: transparent; font-size: calc(14px * var(--font-scale)); font-weight: 750;
+    }
+    .mini-btn:hover { color: var(--ink); background: #edf0ea; }
+    .mini-btn[aria-pressed="false"] { opacity: .48; }
+    math-field {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      padding: 9px 10px;
+      border: 1px solid #cbd4cc;
+      border-radius: 9px;
+      background: #fff;
+      font-size: calc(19px * var(--font-scale));
+      --caret-color: var(--orange-dark);
+      --selection-background-color: #ffe2cc;
+      --contains-highlight-background-color: transparent;
+    }
+    math-field::part(virtual-keyboard-toggle) { color: var(--forest-2); }
+    .card-label { display: block; margin: 12px 0 7px; color: var(--muted); font-size: calc(10px * var(--font-scale)); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .mode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .mode-btn {
+      min-height: 43px; padding: 5px 2px; border: 1px solid #d6dcd5; border-radius: 8px;
+      color: #4b5d58; background: #f8f7f2; font-weight: 800; font-size: calc(14px * var(--font-scale));
+    }
+    .mode-btn small { display: block; margin-top: 2px; font-size: calc(8px * var(--font-scale)); font-weight: 750; letter-spacing: .02em; }
+    .mode-btn.is-active { color: #fff; background: var(--forest-2); border-color: var(--forest-2); }
+    .derivative-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+    .toggle-chip {
+      min-height: 30px; padding: 5px 9px; border: 1px solid #d5dbd4; border-radius: 7px;
+      color: #40524e; background: #fff; font: 700 12px/1 Georgia, serif;
+    }
+    .toggle-chip[aria-pressed="true"] { color: #fff; background: #466f68; border-color: #466f68; }
+    .why-btn { margin-left: auto; color: var(--orange-dark); background: transparent; border-color: #efc6a9; font-family: inherit; }
+    .derivatives {
+      margin-top: 9px; padding: 8px 9px; border-radius: 8px; color: #576661; background: #f4f1e9;
+      font: 13px/1.55 Georgia, serif; overflow-wrap: anywhere;
+    }
+    .error { display: none; margin-top: 8px; color: #a93f37; font-size: calc(11px * var(--font-scale)); line-height: 1.45; }
+    .error.is-visible { display: block; }
+    .card-settings { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e1e4de; }
+    .card-settings.is-open { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .field-label { display: grid; gap: 5px; color: var(--muted); font-size: calc(11px * var(--font-scale)); font-weight: 700; }
+    .field-input { width: 100%; min-height: 34px; border: 1px solid #cdd5ce; border-radius: 7px; padding: 6px 8px; background: #fff; color: var(--ink); }
+    input[type="color"] { width: 100%; height: 34px; padding: 3px; }
+
+    .sidebar-footer { padding: 12px; border-top: 1px solid #d5d9d2; background: #e9e5da; }
+    .add-row { display: grid; grid-template-columns: 1fr 94px; gap: 7px; }
+    .session-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+    .session-row .btn { padding-inline: 6px; font-size: calc(11px * var(--font-scale)); }
+    .project-credit { margin-top: 9px; color: #71807c; font-size: calc(9px * var(--font-scale)); line-height: 1.45; text-align: center; }
+
+    .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #fff; }
+    .graph-toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      min-height: 54px; padding: 9px 14px; border-bottom: 1px solid #dce1dc; background: #fffdf9;
+    }
+    .tool-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .tool-btn { min-height: 34px; padding: 6px 10px; font-size: calc(12px * var(--font-scale)); }
+    .tool-btn[aria-pressed="true"] { color: #fff; background: var(--forest-2); border-color: var(--forest-2); }
+    .range-fields { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: calc(11px * var(--font-scale)); font-weight: 750; }
+    .range-fields input { width: 58px; min-height: 32px; padding: 5px 7px; border: 1px solid #ccd4cd; border-radius: 7px; color: var(--ink); background: #fff; }
+    .graph-wrap { position: relative; min-height: 0; overflow: hidden; background: #fff; }
+    #graph { width: 100%; height: 100%; min-height: 330px; }
+    .graph-badge {
+      position: absolute; top: 14px; left: 16px; z-index: 5; pointer-events: none;
+      padding: 7px 9px; border: 1px solid rgba(19,40,37,.12); border-radius: 8px;
+      color: #596b66; background: rgba(255,253,248,.88); backdrop-filter: blur(8px);
+      font-size: calc(10px * var(--font-scale)); font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+    }
+    .analysis-legend {
+      position: absolute; right: 15px; top: 14px; z-index: 6;
+      min-width: 206px; max-width: min(280px, calc(100% - 30px));
+      padding: 13px 14px; border: 1px solid rgba(19,40,37,.14); border-radius: 10px;
+      background: rgba(255,253,248,.94); box-shadow: 0 8px 28px rgba(23,48,43,.1); backdrop-filter: blur(10px);
+    }
+    .analysis-legend:empty { display: none; }
+    .legend-title { margin-bottom: 8px; color: var(--muted); font-size: calc(9px * var(--font-scale)); font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: calc(11px * var(--font-scale)); }
+    .legend-line { width: 26px; height: 3px; border-radius: 3px; background: var(--legend-color); }
+    .legend-copy { display: flex; justify-content: space-between; gap: 14px; flex: 1; }
+    .legend-copy b { font-weight: 750; }
+    .legend-copy span { color: var(--muted); font-family: Georgia, serif; }
+    .empty-state {
+      position: absolute; inset: 0; z-index: 4; display: none; place-items: center; pointer-events: none;
+      color: var(--muted); text-align: center;
+    }
+    .empty-state.is-visible { display: grid; }
+
+    .analysis-strip {
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 132px repeat(3, minmax(150px, 1fr)) auto;
+      align-items: stretch;
+      border-top: 1px solid #d7ddd7;
+      background: var(--forest);
+      color: #f3f8f6;
+    }
+    .strip-cell { min-width: 0; padding: 12px 16px; border-right: 1px solid rgba(255,255,255,.11); }
+    .strip-cell:last-child { border-right: 0; }
+    .strip-label { color: #99b8b0; font-size: calc(9px * var(--font-scale)); font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    .strip-value { margin-top: 5px; font: 700 19px/1.15 Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .strip-meaning { margin-top: 3px; color: #bad0ca; font-size: calc(10px * var(--font-scale)); }
+    .tangent-cell { display: flex; align-items: center; gap: 10px; min-width: 260px; }
+    .tangent-controls { flex: 1; }
+    .tangent-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(10px * var(--font-scale)); color: #bad0ca; }
+    .tangent-top label { display: flex; align-items: center; gap: 5px; }
+    .tangent-cell input[type="range"] { width: 100%; accent-color: var(--orange); }
+
+    dialog { border: 0; padding: 0; background: transparent; color: var(--ink); }
+    dialog::backdrop { background: rgba(8,27,24,.58); backdrop-filter: blur(4px); }
+    .dialog-card { width: min(530px, calc(100vw - 30px)); max-height: min(720px, calc(100vh - 30px)); overflow: auto; border-radius: 16px; background: var(--panel); box-shadow: var(--shadow); }
+    .dialog-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid #e0e3dd; }
+    .dialog-head h2 { margin: 0; font: 700 23px/1.1 Georgia, serif; }
+    .dialog-body { padding: 20px; }
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .preset {
+      padding: 13px; text-align: left; border: 1px solid #d6dcd5; border-radius: 10px; background: #fff;
+    }
+    .preset:hover { border-color: #8ea39c; background: #f6f6f0; }
+    .preset strong { display: block; font-family: Georgia, serif; font-size: calc(16px * var(--font-scale)); }
+    .preset span { display: block; margin-top: 4px; color: var(--muted); font-size: calc(11px * var(--font-scale)); }
+    .why-equation { margin: 12px 0; padding: 14px; border-left: 4px solid var(--orange); background: #f5f1e9; font: 700 19px/1.5 Georgia, serif; }
+    .help-list { padding-left: 20px; color: #53645f; line-height: 1.7; }
+    .status-toast {
+      position: fixed; left: 50%; bottom: 96px; z-index: 60; transform: translate(-50%, 18px);
+      padding: 9px 13px; border-radius: 8px; color: #fff; background: #183d36; opacity: 0; pointer-events: none;
+      box-shadow: var(--shadow); font-size: calc(12px * var(--font-scale)); transition: opacity .2s ease, transform .2s ease;
+    }
+    .status-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .sidebar-scrim { display: none; }
+
+    /* Global font scaling also covers selectors that use font shorthand. */
+    .brand-mark { font-size: calc(18px * var(--font-scale)); }
+    .function-name { font-size: calc(16px * var(--font-scale)); }
+    .toggle-chip { font-size: calc(12px * var(--font-scale)); }
+    .derivatives { font-size: calc(13px * var(--font-scale)); }
+    .strip-value { font-size: calc(19px * var(--font-scale)); }
+    .dialog-head h2 { font-size: calc(23px * var(--font-scale)); }
+    .why-equation { font-size: calc(19px * var(--font-scale)); }
+
+    .brand-copy { display: grid; align-items: center; gap: 1px; min-width: 0; }
+    .brand-copy strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand-copy span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .display-controls {
+      display: flex; align-items: stretch; gap: 8px; min-width: 320px;
+    }
+    .display-control {
+      display: grid; gap: 3px; min-width: 150px; padding: 4px 8px;
+      border: 1px solid #d8ddd7; border-radius: 9px; background: #f8f7f2;
+      color: #53645f; font-size: calc(10px * var(--font-scale)); font-weight: 750;
+    }
+    .display-control-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .display-control output { color: var(--forest); font-family: Georgia, serif; font-weight: 800; }
+    .display-control input[type="range"] { width: 100%; accent-color: var(--orange); }
+    .slider-ends { display: flex; justify-content: space-between; color: #84908d; font-size: calc(8px * var(--font-scale)); font-weight: 650; }
+
+    .project-info {
+      margin-bottom: 18px; padding: 15px 16px; border: 1px solid #d8ddd5;
+      border-left: 4px solid var(--orange); border-radius: 10px; background: #f7f3ea;
+    }
+    .project-info h3 { margin: 0 0 10px; font-family: Georgia, serif; font-size: calc(17px * var(--font-scale)); }
+    .project-grid { display: grid; grid-template-columns: 112px 1fr; gap: 6px 12px; margin: 0; }
+    .project-grid dt { color: var(--muted); font-weight: 800; }
+    .project-grid dd { margin: 0; color: #40524e; }
+
+    body.presentation .topbar { height: 54px; }
+    body.presentation .app { grid-template-rows: 54px minmax(0,1fr); }
+    body.presentation .sidebar { display: none; }
+    body.presentation .workspace { grid-template-columns: 1fr; }
+    body.presentation .secondary-action, body.presentation .range-fields { display: none; }
+    body.presentation .analysis-strip { min-height: 96px; grid-template-columns: 150px repeat(3, 1fr) auto; }
+    body.presentation .strip-value { font-size: calc(24px * var(--font-scale)); }
+    body.presentation .analysis-legend { font-size: 115%; transform-origin: top right; transform: scale(1.06); }
+
+    @media (max-width: 1020px) {
+      .workspace { grid-template-columns: 306px minmax(0,1fr); }
+      .range-fields { display: none; }
+      .graph-toolbar { flex-wrap: wrap; }
+      .display-controls { order: 3; width: 100%; min-width: 0; }
+      .display-control { flex: 1 1 180px; }
+      .analysis-strip { grid-template-columns: 108px repeat(3, minmax(120px,1fr)); }
+      .tangent-cell { display: none; }
+    }
+    @media (max-width: 780px) {
+      .mobile-only { display: inline-grid; }
+      .brand-copy span, .global-actions .secondary-action { display: none; }
+      .topbar { padding-inline: 12px; }
+      .workspace { display: block; position: relative; }
+      .sidebar {
+        position: fixed; top: 64px; bottom: 0; left: 0; width: min(342px, calc(100vw - 36px));
+        transform: translateX(-105%); transition: transform .22s ease; box-shadow: var(--shadow);
+      }
+      body.drawer-open .sidebar { transform: translateX(0); }
+      .sidebar-scrim { position: fixed; inset: 64px 0 0; z-index: 11; background: rgba(7,27,23,.48); }
+      body.drawer-open .sidebar-scrim { display: block; }
+      .stage { height: calc(100dvh - 64px); }
+      .analysis-strip { min-height: 68px; grid-template-columns: 84px repeat(3, minmax(0,1fr)); }
+      .strip-cell { padding: 10px 8px; }
+      .strip-value { font-size: calc(15px * var(--font-scale)); }
+      .strip-meaning { display: none; }
+      .analysis-legend { top: auto; bottom: 12px; right: 10px; min-width: 190px; }
+      .graph-badge { left: 10px; top: 10px; }
+      .tool-btn { padding-inline: 8px; }
+      .display-controls { gap: 5px; }
+      .display-control { min-width: 0; padding-inline: 6px; }
+    }
+    @media (max-width: 500px) {
+      .brand-copy strong { font-size: calc(17px * var(--font-scale)); }
+      .graph-toolbar { padding: 7px 8px; }
+      .tool-group:last-child { display: none; }
+      .display-controls { display: grid; grid-template-columns: 1fr; }
+      .analysis-strip { grid-template-columns: 72px repeat(3, minmax(0,1fr)); }
+      .strip-cell { padding: 8px 5px; }
+      .strip-label { font-size: calc(7px * var(--font-scale)); }
+      .strip-value { font-size: calc(13px * var(--font-scale)); }
+      .preset-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { overflow: visible; background: #fff; }
+      .app { height: auto; display: block; }
+      .topbar, .sidebar, .graph-toolbar, .analysis-strip { display: none !important; }
+      .workspace, .stage { display: block; height: auto; }
+      .graph-wrap, #graph { height: 760px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <button class="btn btn-dark icon-btn mobile-only" id="drawerBtn" aria-label="Open function panel" aria-expanded="false">☰</button>
+        <div class="brand-mark" aria-hidden="true">ƒ</div>
+        <div class="brand-copy"><strong>M2 Algebra and Calculus — Function Analyzer</strong><span>2026 Summer · TWGHs Mrs. Fung Wong Fung Ting College</span></div>
+      </div>
+      <nav class="global-actions" aria-label="Application actions">
+        <button class="btn btn-dark secondary-action" id="presentationBtn" aria-pressed="false">Presentation</button>
+        <button class="btn btn-dark secondary-action" id="printBtn">Print</button>
+        <button class="btn btn-dark" id="helpBtn">Help</button>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <div class="sidebar-scrim" id="sidebarScrim"></div>
+      <aside class="sidebar" aria-label="Functions panel">
+        <div class="sidebar-head">
+          <div><p class="eyebrow">Functions</p><span class="function-count" id="functionCount">1 of 10</span></div>
+          <button class="btn icon-btn mobile-only" id="closeDrawerBtn" aria-label="Close function panel">×</button>
+        </div>
+        <div class="function-list" id="functionList"></div>
+        <div class="sidebar-footer">
+          <div class="add-row">
+            <button class="btn btn-primary" id="addFunctionBtn">+ Add function</button>
+            <button class="btn" id="examplesBtn">Examples</button>
+          </div>
+          <div class="session-row">
+            <button class="btn btn-quiet" id="saveBtn">Save</button>
+            <button class="btn btn-quiet" id="restoreBtn">Restore</button>
+            <button class="btn btn-quiet" id="clearBtn">Clear</button>
+          </div>
+          <div class="project-credit">fyhung · ChatGPT 5.6<br>TWGHs Mrs. Fung Wong Fung Ting College · 2026 Summer</div>
+        </div>
+      </aside>
+
+      <section class="stage" aria-label="Interactive graph workspace">
+        <div class="graph-toolbar">
+          <div class="tool-group" role="toolbar" aria-label="Graph tools">
+            <button class="btn tool-btn" id="homeBtn">Home</button>
+            <button class="btn tool-btn" id="zoomBtn" aria-pressed="false">Zoom</button>
+            <button class="btn tool-btn" id="panBtn" aria-pressed="true">Pan</button>
+            <button class="btn tool-btn" id="gridBtn" aria-pressed="true">Grid</button>
+            <button class="btn tool-btn" id="equalBtn" title="Reset axis scale to 1:1">Scale 1:1</button>
+            <button class="btn tool-btn" id="labelsBtn" aria-pressed="true">Labels</button>
+          </div>
+          <div class="range-fields" aria-label="Exact coordinate range">
+            <span>x</span><input type="number" id="xmin" value="-10" step="1" aria-label="Minimum x"><span>to</span><input type="number" id="xmax" value="10" step="1" aria-label="Maximum x">
+            <span>y</span><input type="number" id="ymin" value="-10" step="1" aria-label="Minimum y"><span>to</span><input type="number" id="ymax" value="10" step="1" aria-label="Maximum y">
+            <button class="btn tool-btn" id="applyRangeBtn">Apply</button>
+          </div>
+          <div class="display-controls" aria-label="Display settings">
+            <label class="display-control">
+              <span class="display-control-head"><span>Axis scale x:y</span><output id="axisScaleReadout">1:1</output></span>
+              <input type="range" id="axisScaleSlider" min="-19" max="19" step="1" value="0" aria-label="Axis scale ratio from 20 to 1 through 1 to 20">
+              <span class="slider-ends"><span>20:1</span><span>1:1</span><span>1:20</span></span>
+            </label>
+            <label class="display-control">
+              <span class="display-control-head"><span>Font size</span><output id="fontScaleReadout">100%</output></span>
+              <input type="range" id="fontScaleSlider" min="50" max="300" step="5" value="100" aria-label="Overall font size from 50 to 300 percent">
+              <span class="slider-ends"><span>50%</span><span>100%</span><span>300%</span></span>
+            </label>
+          </div>
+          <div class="tool-group">
+            <button class="btn tool-btn" id="exportBtn">Export image</button>
+          </div>
+        </div>
+
+        <div class="graph-wrap">
+          <div class="graph-badge" id="rangeBadge">x: −10…10 · y: −10…10</div>
+          <div id="graph" role="img" aria-label="Interactive Cartesian graph of the entered functions"></div>
+          <div class="analysis-legend" id="analysisLegend"></div>
+          <div class="empty-state" id="emptyState"><div><strong>No visible functions</strong><br>Show a function or add a new one.</div></div>
+        </div>
+
+        <div class="analysis-strip" aria-live="polite">
+          <div class="strip-cell"><div class="strip-label">Trace x</div><div class="strip-value" id="traceX">0.000</div><div class="strip-meaning" id="traceName">f(x)</div></div>
+          <div class="strip-cell"><div class="strip-label">f(x)</div><div class="strip-value" id="traceY">0.000</div><div class="strip-meaning" id="meaningY">on x-axis</div></div>
+          <div class="strip-cell"><div class="strip-label">f′(x)</div><div class="strip-value" id="traceDY">−3.000</div><div class="strip-meaning" id="meaningDY">decreasing</div></div>
+          <div class="strip-cell"><div class="strip-label">f″(x)</div><div class="strip-value" id="traceDDY">0.000</div><div class="strip-meaning" id="meaningDDY">possible transition</div></div>
+          <div class="strip-cell tangent-cell">
+            <div class="tangent-controls">
+              <div class="tangent-top"><label><input type="checkbox" id="tangentToggle"> Tangent</label><span id="tangentReadout">slope −3.000</span></div>
+              <input type="range" id="tangentSlider" min="-10" max="10" step="0.05" value="0" aria-label="Tangent x coordinate">
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="examplesDialog">
+    <div class="dialog-card">
+      <div class="dialog-head"><h2>Try an example</h2><button class="btn icon-btn" data-close-dialog aria-label="Close">×</button></div>
+      <div class="dialog-body"><div class="preset-grid" id="presetGrid"></div></div>
+    </div>
+  </dialog>
+
+  <dialog id="whyDialog">
+    <div class="dialog-card">
+      <div class="dialog-head"><h2 id="whyTitle">Why this color?</h2><button class="btn icon-btn" data-close-dialog aria-label="Close">×</button></div>
+      <div class="dialog-body" id="whyBody"></div>
+    </div>
+  </dialog>
+
+  <dialog id="helpDialog">
+    <div class="dialog-card">
+      <div class="dialog-head"><h2>About &amp; Quick Guide</h2><button class="btn icon-btn" data-close-dialog aria-label="Close">×</button></div>
+      <div class="dialog-body">
+        <section class="project-info" aria-label="Project information">
+          <h3>Function Analyzer</h3>
+          <dl class="project-grid">
+            <dt>Created by</dt><dd>fyhung</dd>
+            <dt>With help from</dt><dd>ChatGPT 5.6</dd>
+            <dt>School</dt><dd>TWGHs Mrs. Fung Wong Fung Ting College</dd>
+            <dt>Class</dt><dd>M2 Algebra and Calculus</dd>
+            <dt>Term</dt><dd>2026 Summer</dd>
+          </dl>
+        </section>
+        <ol class="help-list">
+          <li>Edit the expression in the function card. Fractions, roots, powers and trigonometric functions are supported.</li>
+          <li>Choose <strong>+/−</strong>, <strong>↑/↓</strong>, or <strong>∪/∩</strong> to color the curve by sign, monotonicity, or concavity.</li>
+          <li>Drag the graph to pan. Use the wheel or pinch to zoom. Double-click the graph to return home.</li>
+          <li>Hover on a curve to compare f(x), f′(x), and f″(x) at the same x-coordinate.</li>
+          <li>Turn on f′, f″, special points, or the tangent line when you are ready to reveal more.</li>
+          <li>Use <strong>Axis scale x:y</strong> to compare horizontal and vertical units from 20:1 to 1:20. The graph always fills the whole canvas; the visible coordinate range expands as needed. Use <strong>Scale 1:1</strong> to reset quickly.</li>
+          <li>Use <strong>Font size</strong> from 50% to 300% to enlarge or reduce text across the interface and graph labels.</li>
+        </ol>
+      </div>
+    </div>
+  </dialog>
+  <div class="status-toast" id="toast" role="status"></div>
+
+  <script>
+  window.addEventListener('load', () => {
+    'use strict';
+
+    // 1. Constants / configuration
+    const STORAGE_KEY = 'function-analyzer-v1';
+    const MAX_FUNCTIONS = 10;
+    const EPS = 1e-7;
+    const COLORS = ['#2e75d4', '#ef7d3c', '#2c9a70', '#7758b5', '#db554a', '#b38324', '#238c95', '#a84e8b'];
+    const FUNCTION_NAMES = ['f', 'g', 'h', 'p', 'q', 'r', 's', 't', 'u', 'v'];
+    const ANALYSIS_COLORS = {
+      positive: '#2e75d4', negative: '#db554a', increasing: '#2c9a70',
+      decreasing: '#ef7d3c', concaveUp: '#7758b5', concaveDown: '#dda53a'
+    };
+    const PRESETS = [
+      { title: 'Quadratic', latex: 'x^2-4', note: 'Roots, sign, turning point' },
+      { title: 'Cubic', latex: 'x^3-3x', note: 'Extrema and inflection' },
+      { title: 'Reciprocal', latex: '\\frac{1}{x}', note: 'Domain and asymptote' },
+      { title: 'Sine', latex: '\\sin(x)', note: 'Periodicity and derivatives' },
+      { title: 'Exponential', latex: 'e^x', note: 'Growth and concavity' },
+      { title: 'Logarithm', latex: '\\ln(x)', note: 'Restricted domain' },
+      { title: 'Absolute value', latex: '\\left|x\\right|', note: 'A non-differentiable point' },
+      { title: 'Square root', latex: '\\sqrt{x}', note: 'Restricted domain' }
+    ];
+    const els = Object.fromEntries([
+      'functionList','functionCount','graph','analysisLegend','emptyState','rangeBadge','traceX','traceY','traceDY','traceDDY',
+      'meaningY','meaningDY','meaningDDY','traceName','tangentToggle','tangentSlider','tangentReadout','xmin','xmax','ymin','ymax',
+      'examplesDialog','presetGrid','whyDialog','whyTitle','whyBody','helpDialog','toast','drawerBtn','axisScaleSlider','axisScaleReadout','fontScaleSlider','fontScaleReadout'
+    ].map(id => [id, document.getElementById(id)]));
+
+    // 2. Application state
+    const makeFunction = (latex = 'x^3-3x', index = 0) => ({
+      id: (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random()).toString(),
+      name: FUNCTION_NAMES[index % FUNCTION_NAMES.length], latex, visible: true,
+      color: COLORS[index % COLORS.length], width: 3, mode: 'normal',
+      showD1: false, showD2: false, showPoints: false,
+      colors: { ...ANALYSIS_COLORS }, compiled: null, error: ''
+    });
+    let state = {
+      functions: [makeFunction()], selectedId: null,
+      range: { xmin: -10, xmax: 10, ymin: -10, ymax: 10 },
+      grid: true, labels: true, axisScale: 0, fontScale: 100, dragmode: 'pan', tangent: false, tangentX: 0
+    };
+    state.selectedId = state.functions[0].id;
+    let graphReady = false;
+    let renderTimer = null;
+    let toastTimer = null;
+    let suspendRelayout = false;
+    let openSettingsId = null;
+
+    // 3. Math parser
+    function extractRightSide(latex) {
+      const eq = latex.lastIndexOf('=');
+      return (eq >= 0 ? latex.slice(eq + 1) : latex).trim();
+    }
+
+    function replaceFractions(value) {
+      let s = value;
+      const pattern = /\\frac\{([^{}]+)\}\{([^{}]+)\}/g;
+      let previous;
+      do { previous = s; s = s.replace(pattern, '(($1)/($2))'); } while (s !== previous);
+      return s;
+    }
+
+    function latexToMath(latex) {
+      let s = extractRightSide(latex)
+        .replace(/\\left/g, '').replace(/\\right/g, '')
+        .replace(/\\,/g, '').replace(/\\!/g, '')
+        .replace(/\\cdot|\\times/g, '*')
+        .replace(/\\pi/g, 'pi')
+        .replace(/\\operatorname\{([^}]+)\}/g, '$1');
+      s = replaceFractions(s);
+      s = s.replace(/\\sqrt\[([^\]]+)\]\{([^{}]+)\}/g, '(($2)^(1/($1)))');
+      s = s.replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)');
+      s = s.replace(/\\(arcsin|arccos|arctan)/g, (_, name) => ({ arcsin: 'asin', arccos: 'acos', arctan: 'atan' })[name]);
+      s = s.replace(/\\(sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|exp|abs|floor|ceil)/g, '$1');
+      s = s.replace(/\\ln/g, 'log').replace(/\\log/g, 'log10');
+      s = s.replace(/\^\{([^{}]+)\}/g, '^($1)');
+      s = s.replace(/\{([^{}]+)\}/g, '($1)');
+      s = s.replace(/\|([^|]+)\|/g, 'abs($1)');
+      s = s.replace(/−/g, '-').replace(/\s+/g, '');
+      return s;
+    }
+
+    function validateTree(node) {
+      const allowedSymbols = new Set(['x','pi','e','E','true','false']);
+      const allowedFunctions = new Set(['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','sqrt','abs','exp','log','log10','floor','ceil','sign']);
+      node.traverse(child => {
+        if (child.isAssignmentNode || child.isFunctionAssignmentNode || child.isAccessorNode || child.isArrayNode || child.isObjectNode || child.isBlockNode) {
+          throw new Error('Assignments and collections are not supported.');
+        }
+        if (child.isSymbolNode && !allowedSymbols.has(child.name) && !(child.parent && child.parent.isFunctionNode && allowedFunctions.has(child.name))) {
+          throw new Error('Unknown symbol “' + child.name + '”. Version 1 graphs functions of x.');
+        }
+        if (child.isFunctionNode && !allowedFunctions.has(child.fn.name)) throw new Error('Function “' + child.fn.name + '” is not supported.');
+      });
+    }
+
+    function compileFunction(fn) {
+      try {
+        const expression = latexToMath(fn.latex);
+        if (!expression) throw new Error('Enter an expression in x.');
+        const node = math.parse(expression);
+        validateTree(node);
+        const d1 = math.simplify(math.derivative(node, 'x'));
+        const d2 = math.simplify(math.derivative(d1, 'x'));
+        fn.compiled = {
+          expression, node, d1, d2,
+          f: node.compile(), df: d1.compile(), ddf: d2.compile(),
+          d1Text: d1.toString(), d2Text: d2.toString()
+        };
+        fn.error = '';
+      } catch (error) {
+        fn.compiled = null;
+        fn.error = error && error.message ? error.message : 'Unable to graph this expression.';
+      }
+    }
+
+    function safeEval(compiled, x) {
+      try {
+        const value = compiled.evaluate({ x });
+        const n = typeof value === 'number' ? value : (value && typeof value.re === 'number' && Math.abs(value.im || 0) < EPS ? value.re : NaN);
+        return Number.isFinite(n) ? n : NaN;
+      } catch { return NaN; }
+    }
+
+    // 4–8. Evaluation, classification, sampling, segmentation
+    function categoryFor(fn, y, dy, ddy) {
+      if (fn.mode === 'sign') return y > EPS ? 'positive' : y < -EPS ? 'negative' : 'zero';
+      if (fn.mode === 'monotonicity') return dy > EPS ? 'increasing' : dy < -EPS ? 'decreasing' : 'stationary';
+      if (fn.mode === 'concavity') return ddy > EPS ? 'concaveUp' : ddy < -EPS ? 'concaveDown' : 'transition';
+      return 'normal';
+    }
+
+    function colorFor(fn, category) {
+      return category === 'normal' ? fn.color : (fn.colors[category] || fn.color);
+    }
+
+    function activeClassifier(fn) {
+      if (fn.mode === 'sign') return fn.compiled.f;
+      if (fn.mode === 'monotonicity') return fn.compiled.df;
+      if (fn.mode === 'concavity') return fn.compiled.ddf;
+      return null;
+    }
+
+    function bisectZero(compiled, a, b) {
+      let fa = safeEval(compiled, a), fb = safeEval(compiled, b);
+      if (!Number.isFinite(fa) || !Number.isFinite(fb)) return (a + b) / 2;
+      for (let i = 0; i < 20; i++) {
+        const m = (a + b) / 2, fm = safeEval(compiled, m);
+        if (!Number.isFinite(fm)) break;
+        if (Math.abs(fm) < 1e-10) return m;
+        if (Math.sign(fa) === Math.sign(fm)) { a = m; fa = fm; } else { b = m; fb = fm; }
+      }
+      return (a + b) / 2;
+    }
+
+    function sampleSegments(fn) {
+      const segments = [];
+      const classifier = activeClassifier(fn);
+      const { xmin, xmax, ymin, ymax } = state.range;
+      const count = Math.min(1500, Math.max(700, Math.round(els.graph.clientWidth * 1.15)));
+      const step = (xmax - xmin) / count;
+      const jumpLimit = Math.max(20, Math.abs(ymax - ymin) * 4);
+      let current = null;
+      let previous = null;
+
+      function close() { if (current && current.x.length > 1) segments.push(current); current = null; }
+      for (let i = 0; i <= count; i++) {
+        const x = xmin + i * step;
+        const y = safeEval(fn.compiled.f, x);
+        const dy = safeEval(fn.compiled.df, x);
+        const ddy = safeEval(fn.compiled.ddf, x);
+        if (!Number.isFinite(y) || Math.abs(y) > 1e12 || (previous && Math.abs(y - previous.y) > jumpLimit)) {
+          close(); previous = null; continue;
+        }
+        let category = categoryFor(fn, y, dy, ddy);
+        if (category === 'zero' || category === 'stationary' || category === 'transition') category = previous ? previous.category : 'normal';
+        if (previous && category !== previous.category && classifier) {
+          const bx = bisectZero(classifier, previous.x, x);
+          const by = safeEval(fn.compiled.f, bx);
+          if (Number.isFinite(by)) {
+            if (current) { current.x.push(bx); current.y.push(by); close(); }
+            current = { category, x: [bx], y: [by] };
+          }
+        }
+        if (!current) current = { category, x: [], y: [] };
+        if (current.category !== category) { close(); current = { category, x: [], y: [] }; }
+        current.x.push(x); current.y.push(y);
+        previous = { x, y, category };
+      }
+      close();
+      return segments;
+    }
+
+    function scanZeros(compiled, xmin, xmax, samples = 720) {
+      const roots = [];
+      let px = xmin, py = safeEval(compiled, px);
+      for (let i = 1; i <= samples; i++) {
+        const x = xmin + (xmax - xmin) * i / samples;
+        const y = safeEval(compiled, x);
+        if (Number.isFinite(y) && Number.isFinite(py)) {
+          if (Math.abs(y) < 1e-5) roots.push(x);
+          else if (Math.sign(y) !== Math.sign(py)) roots.push(bisectZero(compiled, px, x));
+        }
+        px = x; py = y;
+      }
+      return roots.filter((x, i, arr) => i === 0 || Math.abs(x - arr[i - 1]) > (xmax - xmin) / samples * 1.8).slice(0, 24);
+    }
+
+    // 9–10. Graph rendering and special points
+    function buildFunctionTraces(fn) {
+      const traces = [];
+      const segments = sampleSegments(fn);
+      segments.forEach((segment, i) => traces.push({
+        x: segment.x, y: segment.y, type: 'scatter', mode: 'lines',
+        name: fn.name + '(x)', legendgroup: fn.id, showlegend: false,
+        line: { color: colorFor(fn, segment.category), width: fn.width },
+        hovertemplate: '<b>' + fn.name + '(x)</b><br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>',
+        customdata: segment.x.map(x => [fn.id, 'f', x])
+      }));
+      const xs = segments.flatMap(s => s.x);
+      if (xs.length && fn.showD1) {
+        traces.push(derivativeTrace(fn, xs, fn.compiled.df, '′', 'dash', Math.max(1.8, fn.width - .6)));
+      }
+      if (xs.length && fn.showD2) {
+        traces.push(derivativeTrace(fn, xs, fn.compiled.ddf, '″', 'dot', Math.max(1.6, fn.width - .8)));
+      }
+      if (fn.showPoints) traces.push(...specialPointTraces(fn));
+      return traces;
+    }
+
+    function derivativeTrace(fn, xs, compiled, suffix, dash, width) {
+      const x = [], y = [];
+      let last = NaN;
+      const jumpLimit = Math.max(20, Math.abs(state.range.ymax - state.range.ymin) * 4);
+      xs.forEach(value => {
+        const result = safeEval(compiled, value);
+        if (!Number.isFinite(result) || (Number.isFinite(last) && Math.abs(result - last) > jumpLimit)) { x.push(null); y.push(null); last = NaN; }
+        else { x.push(value); y.push(result); last = result; }
+      });
+      return {
+        x, y, type: 'scatter', mode: 'lines', name: fn.name + suffix, showlegend: true, legendgroup: fn.id,
+        line: { color: fn.color, width, dash }, opacity: .78,
+        hovertemplate: '<b>' + fn.name + suffix + '(x)</b><br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>',
+        customdata: x.map(value => [fn.id, suffix, value])
+      };
+    }
+
+    function specialPointTraces(fn) {
+      const { xmin, xmax, ymin, ymax } = state.range;
+      const points = [];
+      scanZeros(fn.compiled.f, xmin, xmax).forEach(x => points.push({ x, y: safeEval(fn.compiled.f, x), label: 'Root', symbol: 'circle' }));
+      scanZeros(fn.compiled.df, xmin, xmax).forEach(x => {
+        const y = safeEval(fn.compiled.f, x), d2 = safeEval(fn.compiled.ddf, x);
+        if (!Number.isFinite(y) || Math.abs(d2) < 1e-5) return;
+        points.push({ x, y, label: d2 > 0 ? 'Local minimum' : 'Local maximum', symbol: d2 > 0 ? 'triangle-up' : 'triangle-down' });
+      });
+      scanZeros(fn.compiled.ddf, xmin, xmax).forEach(x => {
+        const delta = Math.max((xmax - xmin) / 2000, 1e-4);
+        const left = safeEval(fn.compiled.ddf, x - delta), right = safeEval(fn.compiled.ddf, x + delta);
+        const y = safeEval(fn.compiled.f, x);
+        if (Number.isFinite(y) && Number.isFinite(left) && Number.isFinite(right) && Math.sign(left) !== Math.sign(right)) {
+          points.push({ x, y, label: 'Inflection', symbol: 'diamond' });
+        }
+      });
+      const visible = points.filter(p => Number.isFinite(p.y) && p.y >= ymin - Math.abs(ymax-ymin) && p.y <= ymax + Math.abs(ymax-ymin));
+      if (!visible.length) return [];
+      return [{
+        x: visible.map(p => p.x), y: visible.map(p => p.y), text: visible.map(p => p.label),
+        type: 'scatter', mode: 'markers+text', textposition: 'top center', showlegend: false,
+        marker: { size: 9, color: '#132825', line: { color: '#fff', width: 1.5 }, symbol: visible.map(p => p.symbol) },
+        textfont: { size: graphFontSize(10), color: '#132825' }, hovertemplate: '<b>%{text}</b><br>(%{x:.4g}, %{y:.4g})<extra></extra>',
+        customdata: visible.map(p => [fn.id, 'point', p.x])
+      }];
+    }
+
+    function tangentTraces() {
+      if (!state.tangent) return [];
+      const fn = selectedFunction();
+      if (!fn || !fn.visible || !fn.compiled) return [];
+      const a = state.tangentX, fa = safeEval(fn.compiled.f, a), slope = safeEval(fn.compiled.df, a);
+      if (!Number.isFinite(fa) || !Number.isFinite(slope)) { els.tangentReadout.textContent = 'slope undefined'; return []; }
+      const x = [state.range.xmin, state.range.xmax];
+      const y = x.map(v => fa + slope * (v - a));
+      els.tangentReadout.textContent = 'slope ' + formatNumber(slope);
+      return [
+        { x, y, type: 'scatter', mode: 'lines', showlegend: false, hoverinfo: 'skip', line: { color: '#132825', width: 2, dash: 'dashdot' } },
+        { x: [a], y: [fa], type: 'scatter', mode: 'markers', showlegend: false, marker: { size: 11, color: '#ef7d3c', line: { color: '#fff', width: 2 } }, hovertemplate: 'Tangent point<br>(%{x:.4g}, %{y:.4g})<extra></extra>', customdata: [[fn.id, 'tangent', a]] }
+      ];
+    }
+
+    function normalizedAxisScale(value = state.axisScale) {
+      return Math.max(-19, Math.min(19, Math.round(Number(value) || 0)));
+    }
+
+    function axisScaleRatio(value = state.axisScale) {
+      const position = normalizedAxisScale(value);
+      if (position < 0) return 1 / (1 - position);
+      if (position > 0) return 1 + position;
+      return 1;
+    }
+
+    function axisScaleLabel(value = state.axisScale) {
+      const position = normalizedAxisScale(value);
+      if (position < 0) return (1 - position) + ':1';
+      if (position > 0) return '1:' + (1 + position);
+      return '1:1';
+    }
+
+    function normalizedFontScale(value = state.fontScale) {
+      const n = Number(value);
+      return Number.isFinite(n) ? Math.max(50, Math.min(300, Math.round(n / 5) * 5)) : 100;
+    }
+
+    function graphFontSize(base) {
+      return Math.max(7, base * normalizedFontScale() / 100);
+    }
+
+    function updateDisplayControls() {
+      state.axisScale = normalizedAxisScale();
+      state.fontScale = normalizedFontScale();
+      els.axisScaleSlider.value = state.axisScale;
+      els.axisScaleReadout.textContent = axisScaleLabel();
+      els.fontScaleSlider.value = state.fontScale;
+      els.fontScaleReadout.textContent = state.fontScale + '%';
+      document.documentElement.style.setProperty('--font-scale', String(state.fontScale / 100));
+    }
+
+    function graphLayout() {
+      const axisBase = {
+        showgrid: state.grid, zeroline: true, zerolinecolor: '#73817d', zerolinewidth: 1.4,
+        gridcolor: '#e3e6e1', gridwidth: 1, showline: false,
+        tickfont: { color: state.labels ? '#66736f' : 'rgba(0,0,0,0)', size: graphFontSize(11) },
+        ticks: state.labels ? 'outside' : '', tickcolor: '#aab3ae', fixedrange: false,
+        minor: { showgrid: state.grid, gridcolor: '#f0f1ed', dtick: .5 }
+      };
+      return {
+        autosize: true, margin: { l: 54, r: 24, t: 24, b: 46 }, paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff',
+        font: { size: graphFontSize(12) }, hoverlabel: { font: { size: graphFontSize(12) } },
+        hovermode: 'closest', dragmode: state.dragmode, uirevision: 'function-analyzer',
+        xaxis: { ...axisBase, range: [state.range.xmin, state.range.xmax], title: state.labels ? { text: 'x', standoff: 5, font: { family: 'Georgia, serif', size: graphFontSize(16) } } : undefined },
+        yaxis: { ...axisBase, range: [state.range.ymin, state.range.ymax], title: state.labels ? { text: 'y', standoff: 4, font: { family: 'Georgia, serif', size: graphFontSize(16) } } : undefined,
+          scaleanchor: 'x', scaleratio: axisScaleRatio(), constrain: 'range' },
+        legend: { orientation: 'h', x: 0, y: 1.02, xanchor: 'left', yanchor: 'bottom', font: { size: graphFontSize(10) }, bgcolor: 'rgba(255,255,255,.75)' }
+      };
+    }
+
+    async function renderGraph() {
+      if (!window.Plotly || !window.math) return;
+      const traces = [];
+      state.functions.forEach(fn => { if (fn.visible && fn.compiled) traces.push(...buildFunctionTraces(fn)); });
+      traces.push(...tangentTraces());
+      els.emptyState.classList.toggle('is-visible', !state.functions.some(fn => fn.visible && fn.compiled));
+      suspendRelayout = true;
+      try {
+        await Plotly.react(els.graph, traces, graphLayout(), {
+          responsive: true, displaylogo: false, scrollZoom: true, doubleClick: false,
+          modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d','toggleSpikelines']
+        });
+      } finally {
+        suspendRelayout = false;
+      }
+      if (!graphReady) bindGraphEvents();
+      graphReady = true;
+      renderLegend();
+      updateRangeUI();
+      updateTrace(state.tangentX, selectedFunction());
+    }
+
+    function bindGraphEvents() {
+      els.graph.on('plotly_hover', event => {
+        const point = event.points && event.points[0];
+        if (!point || !point.customdata) return;
+        const [id, role, customX] = point.customdata;
+        const fn = state.functions.find(item => item.id === id);
+        const x = Number.isFinite(customX) ? customX : point.x;
+        if (fn && Number.isFinite(x)) updateTrace(x, fn);
+      });
+      els.graph.on('plotly_relayout', event => {
+        if (suspendRelayout) return;
+        if (Number.isFinite(event['xaxis.range[0]']) && Number.isFinite(event['xaxis.range[1]'])) {
+          state.range.xmin = event['xaxis.range[0]']; state.range.xmax = event['xaxis.range[1]'];
+        }
+        if (Number.isFinite(event['yaxis.range[0]']) && Number.isFinite(event['yaxis.range[1]'])) {
+          state.range.ymin = event['yaxis.range[0]']; state.range.ymax = event['yaxis.range[1]'];
+        }
+        clampTangent(); updateRangeUI(); autosave(); scheduleGraph(140);
+      });
+      els.graph.on('plotly_doubleclick', () => { resetRange(); return false; });
+    }
+
+    function renderLegend() {
+      const fn = selectedFunction();
+      if (!fn || !fn.visible || fn.mode === 'normal') { els.analysisLegend.innerHTML = ''; return; }
+      const configs = {
+        sign: ['SIGN OF ' + fn.name + '(x)', [['positive','Above x-axis',fn.name+'(x) > 0'],['negative','Below x-axis',fn.name+'(x) < 0']]],
+        monotonicity: ['MONOTONICITY', [['increasing','Increasing',fn.name+'′(x) > 0'],['decreasing','Decreasing',fn.name+'′(x) < 0']]],
+        concavity: ['CONCAVITY', [['concaveUp','Concave upward',fn.name+'″(x) > 0'],['concaveDown','Concave downward',fn.name+'″(x) < 0']]]
+      };
+      const [title, items] = configs[fn.mode];
+      els.analysisLegend.innerHTML = '<div class="legend-title">' + escapeHTML(title) + '</div>' + items.map(item =>
+        '<div class="legend-item"><span class="legend-line" style="--legend-color:' + fn.colors[item[0]] + '"></span><div class="legend-copy"><b>' + item[1] + '</b><span>' + escapeHTML(item[2]) + '</span></div></div>'
+      ).join('');
+    }
+
+    // 11–14. Equation editor, function cards, interactions
+    function refreshCardFeedback(card, fn) {
+      const errorEl = card.querySelector('[data-role="error"]');
+      if (errorEl) {
+        errorEl.classList.toggle('is-visible', Boolean(fn.error));
+        errorEl.innerHTML = fn.error ? 'Unable to graph: ' + escapeHTML(fn.error) + '<br>Try x² + 3x, sin(x), 1/x, or sqrt(x).' : '';
+      }
+      const d1El = card.querySelector('[data-role="d1-text"]');
+      const d2El = card.querySelector('[data-role="d2-text"]');
+      if (d1El) d1El.textContent = fn.compiled ? fn.compiled.d1Text : '—';
+      if (d2El) d2El.textContent = fn.compiled ? fn.compiled.d2Text : '—';
+    }
+
+    function renderFunctionList() {
+      els.functionList.innerHTML = '';
+      state.functions.forEach((fn, index) => {
+        const card = document.createElement('article');
+        card.className = 'function-card' + (fn.id === state.selectedId ? ' is-selected' : '');
+        card.style.setProperty('--function-color', fn.color);
+        card.dataset.id = fn.id;
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="function-name"><span class="color-dot"></span><span>${escapeHTML(fn.name)}(x)</span></div>
+            <div class="card-actions">
+              <button class="mini-btn" data-action="move-up" aria-label="Move function up" ${index === 0 ? 'disabled' : ''}>↑</button>
+              <button class="mini-btn" data-action="move-down" aria-label="Move function down" ${index === state.functions.length-1 ? 'disabled' : ''}>↓</button>
+              <button class="mini-btn" data-action="visibility" aria-label="Show or hide function" aria-pressed="${fn.visible}">${fn.visible ? '●' : '○'}</button>
+              <button class="mini-btn" data-action="settings" aria-label="Function appearance settings">⚙</button>
+              <button class="mini-btn" data-action="duplicate" aria-label="Duplicate function">⧉</button>
+              <button class="mini-btn" data-action="delete" aria-label="Delete function">×</button>
+            </div>
+          </div>
+          <math-field virtual-keyboard-mode="onfocus" aria-label="Expression for ${escapeHTML(fn.name)} of x">${escapeHTML(fn.latex)}</math-field>
+          <div class="error ${fn.error ? 'is-visible' : ''}" data-role="error">${fn.error ? 'Unable to graph: ' + escapeHTML(fn.error) + '<br>Try x² + 3x, sin(x), 1/x, or sqrt(x).' : ''}</div>
+          <span class="card-label">Analyze the curve</span>
+          <div class="mode-grid" role="group" aria-label="Analysis mode">
+            <button class="mode-btn ${fn.mode === 'normal' ? 'is-active' : ''}" data-mode="normal">ƒ<small>Normal</small></button>
+            <button class="mode-btn ${fn.mode === 'sign' ? 'is-active' : ''}" data-mode="sign">+/−<small>Sign</small></button>
+            <button class="mode-btn ${fn.mode === 'monotonicity' ? 'is-active' : ''}" data-mode="monotonicity">↑/↓<small>Change</small></button>
+            <button class="mode-btn ${fn.mode === 'concavity' ? 'is-active' : ''}" data-mode="concavity">∪/∩<small>Concavity</small></button>
+          </div>
+          <div class="derivative-row">
+            <button class="toggle-chip" data-toggle="d1" aria-pressed="${fn.showD1}">f′</button>
+            <button class="toggle-chip" data-toggle="d2" aria-pressed="${fn.showD2}">f″</button>
+            <button class="toggle-chip" data-toggle="points" aria-pressed="${fn.showPoints}">Points</button>
+            <button class="toggle-chip why-btn" data-action="why">Why?</button>
+          </div>
+          <div class="derivatives">
+            <div><strong>${escapeHTML(fn.name)}′(x)</strong> = <span data-role="d1-text">${fn.compiled ? escapeHTML(fn.compiled.d1Text) : '—'}</span></div>
+            <div><strong>${escapeHTML(fn.name)}″(x)</strong> = <span data-role="d2-text">${fn.compiled ? escapeHTML(fn.compiled.d2Text) : '—'}</span></div>
+          </div>
+          <div class="card-settings ${openSettingsId === fn.id ? 'is-open' : ''}">
+            <label class="field-label">Curve color<input class="field-input" type="color" data-setting="color" value="${fn.color}"></label>
+            <label class="field-label">Line width<input class="field-input" type="number" data-setting="width" min="1" max="7" step="0.5" value="${fn.width}"></label>
+          </div>`;
+
+        card.addEventListener('click', event => {
+          state.selectedId = fn.id;
+          const action = event.target.closest('[data-action]')?.dataset.action;
+          const mode = event.target.closest('[data-mode]')?.dataset.mode;
+          const toggle = event.target.closest('[data-toggle]')?.dataset.toggle;
+          if (action) handleCardAction(action, fn, card);
+          else if (mode) { fn.mode = mode; commit(true); }
+          else if (toggle) { fn[toggle === 'd1' ? 'showD1' : toggle === 'd2' ? 'showD2' : 'showPoints'] = !fn[toggle === 'd1' ? 'showD1' : toggle === 'd2' ? 'showD2' : 'showPoints']; commit(true); }
+          else if (!event.target.closest('math-field, input')) { renderFunctionList(); renderLegend(); updateTrace(state.tangentX, fn); }
+        });
+        const mf = card.querySelector('math-field');
+        let editTimer;
+        mf.addEventListener('focusin', () => { state.selectedId = fn.id; renderFunctionListSelectionOnly(); });
+        mf.addEventListener('input', () => {
+          fn.latex = mf.value;
+          clearTimeout(editTimer);
+          editTimer = setTimeout(() => { compileFunction(fn); autosave(); refreshCardFeedback(card, fn); scheduleGraph(); }, 260);
+        });
+        card.querySelectorAll('[data-setting]').forEach(input => input.addEventListener('input', () => {
+          if (input.dataset.setting === 'color') {
+            fn.color = input.value;
+            card.style.setProperty('--function-color', fn.color);
+          }
+          if (input.dataset.setting === 'width') fn.width = Math.min(7, Math.max(1, Number(input.value) || 3));
+          autosave();
+          scheduleGraph();
+        }));
+        els.functionList.appendChild(card);
+      });
+      els.functionCount.textContent = state.functions.length + ' of ' + MAX_FUNCTIONS;
+    }
+
+    function renderFunctionListSelectionOnly() {
+      els.functionList.querySelectorAll('.function-card').forEach(card => card.classList.toggle('is-selected', card.dataset.id === state.selectedId));
+    }
+
+    function handleCardAction(action, fn, card) {
+      const index = state.functions.indexOf(fn);
+      if (action === 'visibility') fn.visible = !fn.visible;
+      if (action === 'settings') {
+        openSettingsId = openSettingsId === fn.id ? null : fn.id;
+        renderFunctionList();
+        return;
+      }
+      if (action === 'duplicate' && state.functions.length < MAX_FUNCTIONS) {
+        const copy = makeFunction(fn.latex, state.functions.length); Object.assign(copy, JSON.parse(JSON.stringify({ ...fn, id: undefined, compiled: undefined, name: undefined }))); copy.id = makeFunction().id; copy.name = nextFunctionName(); compileFunction(copy); state.functions.splice(index + 1, 0, copy); state.selectedId = copy.id;
+      }
+      if (action === 'delete') {
+        if (openSettingsId === fn.id) openSettingsId = null;
+        state.functions.splice(index, 1);
+        if (!state.functions.length) { const fresh = makeFunction('', 0); compileFunction(fresh); state.functions.push(fresh); }
+        state.selectedId = state.functions[Math.min(index, state.functions.length - 1)].id;
+      }
+      if (action === 'move-up' && index > 0) [state.functions[index-1], state.functions[index]] = [state.functions[index], state.functions[index-1]];
+      if (action === 'move-down' && index < state.functions.length - 1) [state.functions[index+1], state.functions[index]] = [state.functions[index], state.functions[index+1]];
+      if (action === 'why') { openWhy(fn); return; }
+      commit(true);
+    }
+
+    function addFunction(latex = 'x^2') {
+      if (state.functions.length >= MAX_FUNCTIONS) { showToast('The teaching view supports up to 10 functions.'); return; }
+      const fn = makeFunction(latex, state.functions.length); fn.name = nextFunctionName(); compileFunction(fn); state.functions.push(fn); state.selectedId = fn.id; commit(true);
+      requestAnimationFrame(() => els.functionList.lastElementChild?.querySelector('math-field')?.focus());
+    }
+
+    function nextFunctionName(excludeId = null) {
+      const used = new Set(state.functions.filter(fn => fn.id !== excludeId).map(fn => fn.name));
+      return FUNCTION_NAMES.find(name => !used.has(name)) || 'f' + (state.functions.length + 1);
+    }
+
+    function ensureUniqueFunctionNames() {
+      const used = new Set();
+      state.functions.forEach((fn, index) => {
+        if (!fn.name || used.has(fn.name)) {
+          fn.name = FUNCTION_NAMES.find(name => !used.has(name)) || 'f' + (index + 1);
+        }
+        used.add(fn.name);
+      });
+    }
+
+    function selectedFunction() { return state.functions.find(fn => fn.id === state.selectedId) || state.functions[0]; }
+
+    function updateTrace(x, fn = selectedFunction()) {
+      if (!fn || !fn.compiled) {
+        els.traceX.textContent = formatNumber(x);
+        els.traceY.textContent = els.traceDY.textContent = els.traceDDY.textContent = 'undefined';
+        els.traceName.textContent = fn ? fn.name + '(x)' : 'f(x)';
+        els.meaningY.textContent = 'undefined';
+        els.meaningDY.textContent = 'not differentiable';
+        els.meaningDDY.textContent = 'not defined';
+        return;
+      }
+      const y = safeEval(fn.compiled.f, x), dy = safeEval(fn.compiled.df, x), ddy = safeEval(fn.compiled.ddf, x);
+      els.traceX.textContent = formatNumber(x); els.traceY.textContent = formatNumber(y); els.traceDY.textContent = formatNumber(dy); els.traceDDY.textContent = formatNumber(ddy);
+      els.traceName.textContent = fn.name + '(x)';
+      els.meaningY.textContent = !Number.isFinite(y) ? 'undefined' : y > EPS ? 'above x-axis' : y < -EPS ? 'below x-axis' : 'on x-axis';
+      els.meaningDY.textContent = !Number.isFinite(dy) ? 'not differentiable' : dy > EPS ? 'increasing' : dy < -EPS ? 'decreasing' : 'stationary';
+      els.meaningDDY.textContent = !Number.isFinite(ddy) ? 'not defined' : ddy > EPS ? 'concave upward' : ddy < -EPS ? 'concave downward' : 'possible transition';
+    }
+
+    function openWhy(fn) {
+      const copy = {
+        normal: ['Normal mode', '<p>The full curve uses one color so its overall shape stays visually quiet.</p>'],
+        sign: ['Sign of the function', '<div class="why-equation">f(x) &gt; 0 &nbsp;⟹&nbsp; graph above the x-axis</div><div class="why-equation">f(x) &lt; 0 &nbsp;⟹&nbsp; graph below the x-axis</div>'],
+        monotonicity: ['Increasing and decreasing', '<div class="why-equation">f′(x) &gt; 0 &nbsp;⟹&nbsp; f(x) is increasing</div><div class="why-equation">f′(x) &lt; 0 &nbsp;⟹&nbsp; f(x) is decreasing</div>'],
+        concavity: ['Concavity', '<div class="why-equation">f″(x) &gt; 0 &nbsp;⟹&nbsp; concave upward</div><div class="why-equation">f″(x) &lt; 0 &nbsp;⟹&nbsp; concave downward</div><p>A point is marked as an inflection only when concavity changes across it.</p>']
+      }[fn.mode];
+      els.whyTitle.textContent = copy[0]; els.whyBody.innerHTML = copy[1]; els.whyDialog.showModal();
+    }
+
+    // 15. Local storage
+    function serializableState() {
+      return { ...state, functions: state.functions.map(({ compiled, error, ...fn }) => fn) };
+    }
+    function autosave() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableState())); return true; }
+      catch { return false; }
+    }
+    function restore(showMessage = true) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved || !Array.isArray(saved.functions) || !saved.functions.length) return false;
+        state = { ...state, ...saved, functions: saved.functions.slice(0, MAX_FUNCTIONS).map((item, index) => ({ ...makeFunction(item.latex || 'x^2', index), ...item, colors: { ...ANALYSIS_COLORS, ...(item.colors || {}) } })) };
+        ensureUniqueFunctionNames();
+        state.axisScale = normalizedAxisScale(state.axisScale);
+        state.fontScale = normalizedFontScale(state.fontScale);
+        delete state.equal;
+        state.functions.forEach(compileFunction); state.selectedId = state.functions.some(fn => fn.id === state.selectedId) ? state.selectedId : state.functions[0].id;
+        clampTangent(); syncControls(); renderFunctionList(); renderGraph(); if (showMessage) showToast('Saved session restored.'); return true;
+      } catch { return false; }
+    }
+
+    // 16. Initialization and global event handlers
+    function commit(redraw = false) { autosave(); renderFunctionList(); if (redraw) scheduleGraph(); }
+    function scheduleGraph(delay = 30) { clearTimeout(renderTimer); renderTimer = setTimeout(renderGraph, delay); }
+    function resetRange() { state.range = { xmin: -10, xmax: 10, ymin: -10, ymax: 10 }; clampTangent(); syncControls(); autosave(); renderGraph(); }
+    function clampTangent() {
+      state.tangentX = Math.max(state.range.xmin, Math.min(state.range.xmax, Number(state.tangentX) || 0));
+      els.tangentSlider.min = state.range.xmin; els.tangentSlider.max = state.range.xmax; els.tangentSlider.step = Math.max((state.range.xmax - state.range.xmin) / 400, .001); els.tangentSlider.value = state.tangentX;
+    }
+    function updateRangeUI() {
+      const r = state.range;
+      els.xmin.value = roundedInput(r.xmin); els.xmax.value = roundedInput(r.xmax); els.ymin.value = roundedInput(r.ymin); els.ymax.value = roundedInput(r.ymax);
+      els.rangeBadge.textContent = 'x: ' + compact(r.xmin) + '…' + compact(r.xmax) + ' · y: ' + compact(r.ymin) + '…' + compact(r.ymax) + ' · scale ' + axisScaleLabel();
+    }
+    function syncControls() {
+      ['grid','labels'].forEach(key => document.getElementById(key + 'Btn').setAttribute('aria-pressed', String(state[key])));
+      document.getElementById('panBtn').setAttribute('aria-pressed', String(state.dragmode === 'pan'));
+      document.getElementById('zoomBtn').setAttribute('aria-pressed', String(state.dragmode === 'zoom'));
+      els.tangentToggle.checked = state.tangent; updateDisplayControls(); clampTangent(); updateRangeUI();
+    }
+    function formatNumber(value) { return Number.isFinite(value) ? (Math.abs(value) >= 10000 || (Math.abs(value) > 0 && Math.abs(value) < .0001) ? value.toExponential(3) : Number(value.toPrecision(6)).toString()) : 'undefined'; }
+    function compact(value) { return Number(value.toFixed(2)).toLocaleString(); }
+    function roundedInput(value) { return Number(value.toFixed(4)); }
+    function escapeHTML(value) { const div = document.createElement('div'); div.textContent = String(value); return div.innerHTML; }
+    function showToast(message) { clearTimeout(toastTimer); els.toast.textContent = message; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1900); }
+
+    document.getElementById('addFunctionBtn').addEventListener('click', () => addFunction());
+    document.getElementById('examplesBtn').addEventListener('click', () => els.examplesDialog.showModal());
+    document.getElementById('helpBtn').addEventListener('click', () => els.helpDialog.showModal());
+    document.querySelectorAll('[data-close-dialog]').forEach(btn => btn.addEventListener('click', () => btn.closest('dialog').close()));
+    [els.examplesDialog, els.whyDialog, els.helpDialog].forEach(dialog => dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); }));
+    PRESETS.forEach(preset => {
+      const button = document.createElement('button'); button.className = 'preset';
+      button.innerHTML = '<strong>' + escapeHTML(preset.title) + '</strong><span>' + escapeHTML(preset.latex) + ' · ' + escapeHTML(preset.note) + '</span>';
+      button.addEventListener('click', () => { const fn = selectedFunction(); if (fn) { fn.latex = preset.latex; compileFunction(fn); commit(true); } else addFunction(preset.latex); els.examplesDialog.close(); });
+      els.presetGrid.appendChild(button);
+    });
+    document.getElementById('homeBtn').addEventListener('click', resetRange);
+    document.getElementById('panBtn').addEventListener('click', () => { state.dragmode = 'pan'; syncControls(); autosave(); Plotly.relayout(els.graph, { dragmode: 'pan' }); });
+    document.getElementById('zoomBtn').addEventListener('click', () => { state.dragmode = 'zoom'; syncControls(); autosave(); Plotly.relayout(els.graph, { dragmode: 'zoom' }); });
+    document.getElementById('gridBtn').addEventListener('click', () => { state.grid = !state.grid; syncControls(); autosave(); renderGraph(); });
+    document.getElementById('labelsBtn').addEventListener('click', () => { state.labels = !state.labels; syncControls(); autosave(); renderGraph(); });
+    document.getElementById('equalBtn').addEventListener('click', () => { state.axisScale = 0; updateDisplayControls(); updateRangeUI(); autosave(); renderGraph(); });
+    els.axisScaleSlider.addEventListener('input', () => { state.axisScale = normalizedAxisScale(els.axisScaleSlider.value); updateDisplayControls(); updateRangeUI(); autosave(); scheduleGraph(20); });
+    els.fontScaleSlider.addEventListener('input', () => { state.fontScale = normalizedFontScale(els.fontScaleSlider.value); updateDisplayControls(); autosave(); scheduleGraph(20); });
+    document.getElementById('applyRangeBtn').addEventListener('click', () => {
+      const values = [els.xmin,els.xmax,els.ymin,els.ymax].map(input => Number(input.value));
+      if (!values.every(Number.isFinite) || values[0] >= values[1] || values[2] >= values[3]) { showToast('Enter valid minimum and maximum ranges.'); return; }
+      [state.range.xmin,state.range.xmax,state.range.ymin,state.range.ymax] = values; clampTangent(); autosave(); renderGraph();
+    });
+    document.getElementById('exportBtn').addEventListener('click', () => Plotly.downloadImage(els.graph, { format: 'png', filename: 'function-analysis', width: 1400, height: 900, scale: 1 }));
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('presentationBtn').addEventListener('click', event => { const active = document.body.classList.toggle('presentation'); event.currentTarget.setAttribute('aria-pressed', active); setTimeout(() => Plotly.Plots.resize(els.graph), 220); });
+    document.getElementById('saveBtn').addEventListener('click', () => { showToast(autosave() ? 'Session saved on this device.' : 'This browser blocked local session storage.'); });
+    document.getElementById('restoreBtn').addEventListener('click', () => { if (!restore()) showToast('No saved session found.'); });
+    document.getElementById('clearBtn').addEventListener('click', () => { try { localStorage.removeItem(STORAGE_KEY); } catch {} openSettingsId = null; const fresh = makeFunction(); compileFunction(fresh); state.functions = [fresh]; state.selectedId = fresh.id; resetRange(); commit(true); showToast('Started a fresh session.'); });
+    els.tangentToggle.addEventListener('change', () => { state.tangent = els.tangentToggle.checked; autosave(); renderGraph(); });
+    els.tangentSlider.addEventListener('input', () => { state.tangentX = Number(els.tangentSlider.value); updateTrace(state.tangentX); scheduleGraph(15); });
+    els.drawerBtn.addEventListener('click', () => { const open = document.body.classList.toggle('drawer-open'); els.drawerBtn.setAttribute('aria-expanded', open); });
+    document.getElementById('closeDrawerBtn').addEventListener('click', closeDrawer);
+    document.getElementById('sidebarScrim').addEventListener('click', closeDrawer);
+    function closeDrawer() { document.body.classList.remove('drawer-open'); els.drawerBtn.setAttribute('aria-expanded', 'false'); }
+    window.addEventListener('resize', () => { if (graphReady) Plotly.Plots.resize(els.graph); });
+
+    if (!window.math || !window.Plotly) {
+      els.emptyState.classList.add('is-visible');
+      els.emptyState.innerHTML = '<div><strong>The graphing libraries did not load.</strong><br>Check your internet connection and refresh.</div>';
+      return;
+    }
+    if (!restore(false)) state.functions.forEach(compileFunction);
+    syncControls(); renderFunctionList(); renderGraph();
+  });
+  </script>
+</body>
+</html>
