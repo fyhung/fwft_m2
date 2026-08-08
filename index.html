@@ -27,6 +27,7 @@
       --shadow: 0 18px 48px rgba(21, 45, 41, .12);
       --radius: 14px;
       --font-scale: 1;
+      --top-panel-height: 112px;
     }
 
     * { box-sizing: border-box; }
@@ -45,7 +46,26 @@
       outline: 3px solid rgba(239, 125, 60, .32);
       outline-offset: 2px;
     }
-    .app { height: 100dvh; display: grid; grid-template-rows: 64px minmax(0, 1fr); }
+    .app { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+    .top-panel {
+      position: relative; z-index: 24; min-width: 0; overflow: hidden;
+      background: var(--forest); border-bottom: 1px solid rgba(19,40,37,.2); box-shadow: 0 3px 14px rgba(15,42,37,.10);
+      transition: height .16s ease, min-height .16s ease;
+    }
+    .top-panel-collapse-btn {
+      position: absolute; top: 8px; right: 8px; z-index: 30;
+      width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+      border: 1px solid rgba(255,255,255,.22); border-radius: 8px;
+      color: #f3f8f6; background: rgba(255,255,255,.09); font-size: 18px; line-height: 1; cursor: pointer;
+    }
+    .top-panel-collapse-btn:hover { background: rgba(255,255,255,.16); }
+    .top-panel-collapsed-label { display: none; color: #bad0ca; font-size: calc(10px * var(--font-scale)); font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .top-panel.is-collapsed { height: 34px; min-height: 34px; }
+    .top-panel.is-collapsed .topbar, .top-panel.is-collapsed .graph-toolbar { display: none; }
+    .top-panel.is-collapsed .top-panel-collapse-btn { top: 2px; }
+    .top-panel.is-collapsed .top-panel-collapsed-label { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 46px 0 14px; }
+    .top-panel.is-collapsed .top-panel-collapsed-label strong { color: #f3f8f6; font-family: Georgia, serif; font-size: calc(12px * var(--font-scale)); letter-spacing: 0; text-transform: none; }
 
     .topbar {
       position: relative;
@@ -53,20 +73,21 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 22px;
+      min-height: 52px;
+      padding: 0 48px 0 18px;
       color: #fff;
       background: var(--forest);
       border-bottom: 1px solid rgba(255,255,255,.12);
     }
     .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .brand-mark {
-      width: 34px; height: 34px; display: grid; place-items: center;
+      width: 30px; height: 30px; display: grid; place-items: center;
       border: 1px solid rgba(255,255,255,.4); border-radius: 10px;
       font: 700 18px/1 Georgia, serif; color: #ffe0c3; background: rgba(255,255,255,.06);
     }
     .brand-copy { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
-    .brand-copy strong { font-family: Georgia, "Times New Roman", serif; font-size: calc(20px * var(--font-scale)); letter-spacing: -.01em; }
-    .brand-copy span { color: #a8c1bb; font-size: calc(12px * var(--font-scale)); letter-spacing: .08em; text-transform: uppercase; }
+    .brand-copy strong { font-family: Georgia, "Times New Roman", serif; font-size: calc(18px * var(--font-scale)); letter-spacing: -.01em; }
+    .brand-copy span { color: #a8c1bb; font-size: calc(10px * var(--font-scale)); letter-spacing: .07em; text-transform: uppercase; }
     .global-actions { display: flex; align-items: center; gap: 9px; }
     .header-font-control {
       display: grid; grid-template-columns: auto minmax(90px, 170px) auto; align-items: center; gap: 7px;
@@ -200,10 +221,10 @@
     .author-row .btn { width: 100%; font-size: calc(11px * var(--font-scale)); }
     .project-credit { margin-top: 9px; color: #71807c; font-size: calc(9px * var(--font-scale)); line-height: 1.45; text-align: center; }
 
-    .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #fff; }
+    .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: #fff; }
     .graph-toolbar {
       display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-      min-height: 54px; padding: 9px 14px; border-bottom: 1px solid #dce1dc; background: #fffdf9;
+      min-height: 46px; padding: 6px 48px 6px 12px; border-top: 1px solid rgba(255,255,255,.10); border-bottom: 1px solid #dce1dc; background: #f7f4ec;
     }
     .tool-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .tool-btn { min-height: 34px; padding: 6px 10px; font-size: calc(12px * var(--font-scale)); }
@@ -360,16 +381,16 @@
       body.sidebar-collapsed .sidebar-head > div:first-child, body.sidebar-collapsed .function-list, body.sidebar-collapsed .sidebar-footer { display: revert; }
       body.sidebar-collapsed .sidebar { grid-template-rows: auto minmax(0, 1fr) auto; overflow: visible; }
       body.sidebar-collapsed .sidebar-head { justify-content: space-between; padding: 17px 16px 12px; }
-      .topbar { padding-inline: 12px; }
+      .topbar { padding: 0 48px 0 12px; }
       .workspace { display: block; position: relative; }
       .sidebar {
-        position: fixed; top: 64px; bottom: 0; left: 0; width: min(342px, calc(100vw - 36px));
+        position: fixed; top: var(--top-panel-height); bottom: 0; left: 0; width: min(342px, calc(100vw - 36px));
         transform: translateX(-105%); transition: transform .22s ease; box-shadow: var(--shadow);
       }
       body.drawer-open .sidebar { transform: translateX(0); }
-      .sidebar-scrim { position: fixed; inset: 64px 0 0; z-index: 11; background: rgba(7,27,23,.48); }
+      .sidebar-scrim { position: fixed; inset: var(--top-panel-height) 0 0; z-index: 11; background: rgba(7,27,23,.48); }
       body.drawer-open .sidebar-scrim { display: block; }
-      .stage { height: calc(100dvh - 64px); }
+      .stage { height: 100%; }
       .analysis-strip { min-height: 68px; grid-template-columns: 84px repeat(3, minmax(0,1fr)); }
       .strip-cell { padding: 10px 8px; }
       .strip-value { font-size: calc(15px * var(--font-scale)); }
@@ -396,7 +417,7 @@
     @media print {
       body { overflow: visible; background: #fff; }
       .app { height: auto; display: block; }
-      .topbar, .sidebar, .graph-toolbar, .analysis-strip { display: none !important; }
+      .top-panel, .sidebar, .analysis-strip { display: none !important; }
       .workspace, .stage { display: block; height: auto; }
       .graph-wrap, #graph { height: 760px !important; }
     }
@@ -404,21 +425,51 @@
 </head>
 <body>
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <button class="btn btn-dark icon-btn mobile-only" id="drawerBtn" aria-label="Open function panel" aria-expanded="false">☰</button>
-        <div class="brand-mark" aria-hidden="true">ƒ</div>
-        <div class="brand-copy"><strong>M2 Algebra and Calculus — Function Analyzer</strong><span>2026 Summer · TWGHs Mrs. Fung Wong Fung Ting College</span></div>
+    <section class="top-panel" id="topPanel" aria-label="Title and graph controls">
+      <button class="top-panel-collapse-btn" id="topPanelCollapseBtn" type="button" aria-expanded="true" aria-label="Collapse title and graph controls" title="Collapse title and graph controls">⌃</button>
+      <header class="topbar">
+        <div class="brand">
+          <button class="btn btn-dark icon-btn mobile-only" id="drawerBtn" aria-label="Open function panel" aria-expanded="false">☰</button>
+          <div class="brand-mark" aria-hidden="true">ƒ</div>
+          <div class="brand-copy"><strong>M2 Algebra and Calculus — Function Analyzer</strong><span>2026 Summer · TWGHs Mrs. Fung Wong Fung Ting College</span></div>
+        </div>
+        <nav class="global-actions" aria-label="Application actions">
+          <label class="header-font-control">
+            <span>Font size</span>
+            <input type="range" id="fontScaleSlider" min="50" max="300" step="5" value="100" aria-label="Overall font size from 50 to 300 percent">
+            <output id="fontScaleReadout">100%</output>
+          </label>
+          <button class="btn btn-dark" id="helpBtn">Help</button>
+        </nav>
+      </header>
+
+      <div class="graph-toolbar">
+        <div class="tool-group" role="toolbar" aria-label="Graph tools">
+          <button class="btn tool-btn" id="homeBtn">Home</button>
+          <button class="btn tool-btn" id="zoomBtn" aria-pressed="false">Zoom</button>
+          <button class="btn tool-btn" id="panBtn" aria-pressed="true">Pan</button>
+          <button class="btn tool-btn" id="gridBtn" aria-pressed="true">Grid</button>
+          <button class="btn tool-btn" id="equalBtn" title="Reset axis scale to 1:1">Scale 1:1</button>
+          <button class="btn tool-btn" id="labelsBtn" aria-pressed="true">Labels</button>
+        </div>
+        <div class="range-fields" aria-label="Exact coordinate range">
+          <span>x</span><input type="number" id="xmin" value="-10" step="1" aria-label="Minimum x"><span>to</span><input type="number" id="xmax" value="10" step="1" aria-label="Maximum x">
+          <span>y</span><input type="number" id="ymin" value="-10" step="1" aria-label="Minimum y"><span>to</span><input type="number" id="ymax" value="10" step="1" aria-label="Maximum y">
+          <button class="btn tool-btn" id="applyRangeBtn">Apply</button>
+        </div>
+        <div class="display-controls" aria-label="Display settings">
+          <label class="display-control">
+            <span class="display-control-head"><span>Axis scale x:y</span><output id="axisScaleReadout">1:1</output></span>
+            <input type="range" id="axisScaleSlider" min="-19" max="19" step="1" value="0" aria-label="Axis scale ratio from 20 to 1 through 1 to 20">
+            <span class="slider-ends"><span>20:1</span><span>1:1</span><span>1:20</span></span>
+          </label>
+        </div>
+        <div class="tool-group">
+          <button class="btn tool-btn" id="exportBtn">Export image</button>
+        </div>
       </div>
-      <nav class="global-actions" aria-label="Application actions">
-        <label class="header-font-control">
-          <span>Font size</span>
-          <input type="range" id="fontScaleSlider" min="50" max="300" step="5" value="100" aria-label="Overall font size from 50 to 300 percent">
-          <output id="fontScaleReadout">100%</output>
-        </label>
-        <button class="btn btn-dark" id="helpBtn">Help</button>
-      </nav>
-    </header>
+      <div class="top-panel-collapsed-label"><strong>ƒ Function Analyzer</strong><span>Controls hidden</span></div>
+    </section>
 
     <main class="workspace">
       <div class="sidebar-scrim" id="sidebarScrim"></div>
@@ -449,32 +500,6 @@
       </aside>
 
       <section class="stage" aria-label="Interactive graph workspace">
-        <div class="graph-toolbar">
-          <div class="tool-group" role="toolbar" aria-label="Graph tools">
-            <button class="btn tool-btn" id="homeBtn">Home</button>
-            <button class="btn tool-btn" id="zoomBtn" aria-pressed="false">Zoom</button>
-            <button class="btn tool-btn" id="panBtn" aria-pressed="true">Pan</button>
-            <button class="btn tool-btn" id="gridBtn" aria-pressed="true">Grid</button>
-            <button class="btn tool-btn" id="equalBtn" title="Reset axis scale to 1:1">Scale 1:1</button>
-            <button class="btn tool-btn" id="labelsBtn" aria-pressed="true">Labels</button>
-          </div>
-          <div class="range-fields" aria-label="Exact coordinate range">
-            <span>x</span><input type="number" id="xmin" value="-10" step="1" aria-label="Minimum x"><span>to</span><input type="number" id="xmax" value="10" step="1" aria-label="Maximum x">
-            <span>y</span><input type="number" id="ymin" value="-10" step="1" aria-label="Minimum y"><span>to</span><input type="number" id="ymax" value="10" step="1" aria-label="Maximum y">
-            <button class="btn tool-btn" id="applyRangeBtn">Apply</button>
-          </div>
-          <div class="display-controls" aria-label="Display settings">
-            <label class="display-control">
-              <span class="display-control-head"><span>Axis scale x:y</span><output id="axisScaleReadout">1:1</output></span>
-              <input type="range" id="axisScaleSlider" min="-19" max="19" step="1" value="0" aria-label="Axis scale ratio from 20 to 1 through 1 to 20">
-              <span class="slider-ends"><span>20:1</span><span>1:1</span><span>1:20</span></span>
-            </label>
-          </div>
-          <div class="tool-group">
-            <button class="btn tool-btn" id="exportBtn">Export image</button>
-          </div>
-        </div>
-
         <div class="graph-wrap">
           <div class="graph-badge" id="rangeBadge">x: −10…10 · y: −10…10</div>
           <div id="graph" role="img" aria-label="Interactive Cartesian graph of the entered functions"></div>
@@ -550,8 +575,8 @@
           <li>Hover on a curve to compare f(x), f′(x), and f″(x) at the same x-coordinate.</li>
           <li>Turn on f′, f″, special points, or the tangent line when you are ready to reveal more.</li>
           <li>Use <strong>Axis scale x:y</strong> to compare horizontal and vertical units from 20:1 to 1:20. The graph always fills the whole canvas; the visible coordinate range expands as needed. Use <strong>Scale 1:1</strong> to reset quickly.</li>
-          <li>Use <strong>Font size</strong> in the top header, from 50% to 300%, to enlarge or reduce text across the interface and graph labels.</li>
-          <li>Use the chevron in the Functions panel to collapse/expand the left panel, and the chevron on the bottom analysis panel to reclaim more graph space.</li>
+          <li>The title/header and graph toolbar form one top control panel. Use its chevron to collapse the whole panel to a thin strip and maximize graph height. Use <strong>Font size</strong> there, from 50% to 300%, to enlarge or reduce text across the interface and graph labels.</li>
+          <li>Use the chevron in the Functions panel to collapse/expand the left panel, and the chevron on the bottom analysis panel to reclaim even more graph space.</li>
           <li>The <strong>Examples</strong> menu can read an external JSON file. You can also build functions with the normal UI and press <strong>Export functions → JSON</strong> (or <strong>Export current</strong> inside Examples) to download a ready-to-use <code>examples.json</code>.</li>
           <li>Each function card has an independent <strong>Example title</strong>. Export keeps that title separate from the mathematical function label such as <code>f(x)</code>, along with its MathLive LaTeX, analysis mode, f′/f″/Points choices, the current graph range, and axis scale.</li>
           <li>Put the exported <code>examples.json</code> beside the HTML when serving it from a web server, or press <strong>Load JSON</strong> when opening the HTML directly from a computer.</li>
@@ -608,7 +633,7 @@
     const els = Object.fromEntries([
       'functionList','functionCount','graph','analysisLegend','emptyState','rangeBadge','traceX','traceY','traceDY','traceDDY',
       'meaningY','meaningDY','meaningDDY','traceName','tangentToggle','tangentSlider','tangentReadout','xmin','xmax','ymin','ymax',
-      'examplesDialog','presetGrid','exampleCollectionTitle','exampleStatus','examplesFileInput','whyDialog','whyTitle','whyBody','helpDialog','toast','drawerBtn','axisScaleSlider','axisScaleReadout','fontScaleSlider','fontScaleReadout','analysisStrip','analysisCollapseBtn'
+      'examplesDialog','presetGrid','exampleCollectionTitle','exampleStatus','examplesFileInput','whyDialog','whyTitle','whyBody','helpDialog','toast','drawerBtn','axisScaleSlider','axisScaleReadout','fontScaleSlider','fontScaleReadout','analysisStrip','analysisCollapseBtn','topPanel','topPanelCollapseBtn'
     ].map(id => [id, document.getElementById(id)]));
 
     // 2. Application state
@@ -1416,6 +1441,21 @@
     document.getElementById('equalBtn').addEventListener('click', () => { state.axisScale = 0; updateDisplayControls(); updateRangeUI(); autosave(); renderGraph(); });
     els.axisScaleSlider.addEventListener('input', () => { state.axisScale = normalizedAxisScale(els.axisScaleSlider.value); updateDisplayControls(); updateRangeUI(); autosave(); scheduleGraph(20); });
     els.fontScaleSlider.addEventListener('input', () => { state.fontScale = normalizedFontScale(els.fontScaleSlider.value); updateDisplayControls(); autosave(); scheduleGraph(20); });
+    function updateTopPanelHeight() {
+      if (!els.topPanel) return;
+      document.documentElement.style.setProperty('--top-panel-height', Math.max(34, Math.round(els.topPanel.getBoundingClientRect().height)) + 'px');
+    }
+    els.topPanelCollapseBtn.addEventListener('click', () => {
+      const collapsed = els.topPanel.classList.toggle('is-collapsed');
+      els.topPanelCollapseBtn.setAttribute('aria-expanded', String(!collapsed));
+      els.topPanelCollapseBtn.setAttribute('aria-label', collapsed ? 'Expand title and graph controls' : 'Collapse title and graph controls');
+      els.topPanelCollapseBtn.title = collapsed ? 'Expand title and graph controls' : 'Collapse title and graph controls';
+      els.topPanelCollapseBtn.textContent = collapsed ? '⌄' : '⌃';
+      requestAnimationFrame(updateTopPanelHeight);
+      setTimeout(() => { updateTopPanelHeight(); if (graphReady) Plotly.Plots.resize(els.graph); }, 180);
+    });
+    if (window.ResizeObserver) new ResizeObserver(updateTopPanelHeight).observe(els.topPanel);
+    requestAnimationFrame(updateTopPanelHeight);
     document.getElementById('applyRangeBtn').addEventListener('click', () => {
       const values = [els.xmin,els.xmax,els.ymin,els.ymax].map(input => Number(input.value));
       if (!values.every(Number.isFinite) || values[0] >= values[1] || values[2] >= values[3]) { showToast('Enter valid minimum and maximum ranges.'); return; }
@@ -1447,7 +1487,7 @@
     document.getElementById('closeDrawerBtn').addEventListener('click', closeDrawer);
     document.getElementById('sidebarScrim').addEventListener('click', closeDrawer);
     function closeDrawer() { document.body.classList.remove('drawer-open'); els.drawerBtn.setAttribute('aria-expanded', 'false'); }
-    window.addEventListener('resize', () => { if (graphReady) Plotly.Plots.resize(els.graph); });
+    window.addEventListener('resize', () => { updateTopPanelHeight(); if (graphReady) Plotly.Plots.resize(els.graph); });
 
     if (!window.math || !window.Plotly) {
       els.emptyState.classList.add('is-visible');
